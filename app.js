@@ -6,6 +6,8 @@ app.use(express.static("public"));
 require("dotenv").config();
 const COUNTRY_API_KEY = process.env.COUNTRY_API_KEY;
 const EXCHANGE_API_KEY = process.env.EXCHANGE_API_KEY;
+const NEWS_API_KEY = process.env.NEWS_API_KEY;
+
 
 app.get("/api/user",async (req,res)=>{
     try{
@@ -37,8 +39,60 @@ app.get("/api/user",async (req,res)=>{
             picture: user.picture.large
 
         };
-        res.json({user: userData,
-                  country: countryData});
+        const currencyCode = country.currencies
+  ? Object.keys(country.currencies)[0]
+  : null;
+let exchangeRates = {
+  usd: "N/A",
+  kzt: "N/A"
+};
+
+if (currencyCode) {
+  const exchangeResponse = await axios.get(
+    `https://v6.exchangerate-api.com/v6/${EXCHANGE_API_KEY}/latest/${currencyCode}`
+  );
+
+  exchangeRates.usd = exchangeResponse.data.conversion_rates.USD;
+  exchangeRates.kzt = exchangeResponse.data.conversion_rates.KZT;
+}
+
+let newsData = [];
+
+try {
+  const newsResponse = await axios.get("https://newsapi.org/v2/everything", {
+    params: {
+      q: user.location.country,
+      language: "en",
+      pageSize: 5,
+      apiKey: NEWS_API_KEY
+    }
+  });
+
+  newsData = newsResponse.data.articles.map(article => ({
+    title: article.title || "No title",
+    description: article.description || "No description available",
+    image: article.urlToImage || "",
+    url: article.url
+  }));
+} catch (e) {
+  console.log("News API failed");
+}
+
+
+
+res.json({
+  user: userData,
+  country: countryData,
+  exchange: {
+    base: currencyCode,
+    usd: exchangeRates.usd,
+    kzt: exchangeRates.kzt
+  },
+  news: []
+
+});
+
+
 
     } catch(error){
         res.status(500).json({error: "fail"});
