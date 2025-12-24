@@ -1,0 +1,19 @@
+body{
+    min-height: 100vh;
+  background: linear-gradient(135deg, #b8c5ff, #dbb7ff);
+}
+h1{
+    color:black;
+    font-family: 'Times New Roman', Times, serif;
+}
+button{
+    font-family: 'Times New Roman', Times, serif;
+    background: linear-gradient(135deg, #b8c5ff, #dbb7ff);
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 30px;
+    transition: all 0.3s ease;
+}
