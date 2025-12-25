@@ -13,7 +13,10 @@ app.get("/api/user",async (req,res)=>{
     try{
         const response=await axios.get("https://randomuser.me/api/");
         const user = response.data.results[0];
-        const countryResponse = await axios.get(`https://restcountries.com/v3.1/name/${user.location.country}`);
+        const countryResponse = await axios.get(
+  `https://restcountries.com/v3.1/name/${encodeURIComponent(user.location.country)}`
+);
+
         const country = countryResponse.data[0];
         const countryData = {
   name: country.name?.common || "N/A",
@@ -47,13 +50,17 @@ let exchangeRates = {
   kzt: "N/A"
 };
 
-if (currencyCode) {
-  const exchangeResponse = await axios.get(
-    `https://v6.exchangerate-api.com/v6/${EXCHANGE_API_KEY}/latest/${currencyCode}`
-  );
+if (currencyCode && EXCHANGE_API_KEY) {
+  try {
+    const exchangeResponse = await axios.get(
+      `https://v6.exchangerate-api.com/v6/${EXCHANGE_API_KEY}/latest/${currencyCode}`
+    );
 
-  exchangeRates.usd = exchangeResponse.data.conversion_rates.USD;
-  exchangeRates.kzt = exchangeResponse.data.conversion_rates.KZT;
+    exchangeRates.usd = exchangeResponse.data.conversion_rates?.USD || "N/A";
+    exchangeRates.kzt = exchangeResponse.data.conversion_rates?.KZT || "N/A";
+  } catch {
+    console.log("Exchange API failed");
+  }
 }
 
 let newsData = [];
@@ -61,7 +68,7 @@ let newsData = [];
 try {
   const newsResponse = await axios.get("https://newsapi.org/v2/everything", {
     params: {
-      q: user.location.country,
+      q: user.location.country,  
       language: "en",
       pageSize: 5,
       apiKey: NEWS_API_KEY
@@ -70,7 +77,7 @@ try {
 
   newsData = newsResponse.data.articles.map(article => ({
     title: article.title || "No title",
-    description: article.description || "No description available",
+    description: article.description || "No description",
     image: article.urlToImage || "",
     url: article.url
   }));
@@ -88,9 +95,9 @@ res.json({
     usd: exchangeRates.usd,
     kzt: exchangeRates.kzt
   },
-  news: []
-
+  news: newsData
 });
+
 
 
 
